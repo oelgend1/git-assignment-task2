@@ -14,6 +14,7 @@ public class GameEngineTest {
     public void testInitialState() {
         assertEquals(0, engine.getAttempts());
         assertFalse(engine.isGameWon());
+        assertFalse(engine.isGameOver());
     }
 
     @Test
@@ -22,6 +23,7 @@ public class GameEngineTest {
         GuessResult result = engine.makeGuess(50);
         assertTrue(result.isCorrect());
         assertTrue(engine.isGameWon());
+        assertTrue(engine.isGameOver());
         assertEquals(1, engine.getAttempts());
     }
 
@@ -30,7 +32,7 @@ public class GameEngineTest {
         engine.setTarget(50);
         GuessResult result = engine.makeGuess(30);
         assertFalse(result.isCorrect());
-        assertTrue(result.getMessage().contains("Too low!"));
+        assertTrue(result.getMessage().contains("Too low"));
     }
 
     @Test
@@ -38,7 +40,7 @@ public class GameEngineTest {
         engine.setTarget(50);
         GuessResult result = engine.makeGuess(70);
         assertFalse(result.isCorrect());
-        assertTrue(result.getMessage().contains("Too high!"));
+        assertTrue(result.getMessage().contains("Too high"));
     }
 
     @Test
@@ -58,6 +60,7 @@ public class GameEngineTest {
         engine.reset();
         assertEquals(0, engine.getAttempts());
         assertFalse(engine.isGameWon());
+        assertFalse(engine.isGameOver());
     }
 
     @Test
@@ -66,12 +69,15 @@ public class GameEngineTest {
         assertEquals(100, engine.getMax());
     }
 
+    // ===== Dev feature: quit =====
+
     @Test
     public void testQuitWithNegativeNumber() {
         engine.setTarget(50);
         GuessResult result = engine.makeGuess(-1);
         assertFalse(result.isCorrect());
         assertTrue(engine.hasUserQuit());
+        assertTrue(engine.isGameOver());
         assertTrue(result.getMessage().contains("Exiting"));
     }
 
@@ -81,4 +87,57 @@ public class GameEngineTest {
         engine.makeGuess(-1);
         assertEquals(0, engine.getAttempts());
     }
+
+    // ===== Feature2: max attempts / game over =====
+
+    @Test
+    public void testMaxAttemptsReached() {
+        engine.setTarget(50);
+        for (int i = 0; i < engine.getMaxAttempts(); i++) {
+            engine.makeGuess(1);
+        }
+        assertTrue(engine.isGameOver());
+        assertFalse(engine.isGameWon());
+    }
+
+    @Test
+    public void testGameOverMessageIncludesTarget() {
+        engine.setTarget(50);
+        GuessResult result = null;
+        for (int i = 0; i < engine.getMaxAttempts(); i++) {
+            result = engine.makeGuess(1);
+        }
+        assertNotNull(result);
+        assertTrue(result.getMessage().contains("Game Over"));
+        assertTrue(result.getMessage().contains("50"));
+    }
+
+    @Test
+    public void testWinBeforeMaxAttempts() {
+        engine.setTarget(50);
+        for (int i = 0; i < 5; i++) {
+            engine.makeGuess(1);
+        }
+        GuessResult result = engine.makeGuess(50);
+        assertTrue(engine.isGameWon());
+        assertTrue(engine.isGameOver());
+        assertTrue(result.isCorrect());
+    }
+
+    @Test
+    public void testMaxAttemptsConstant() {
+        assertEquals(10, engine.getMaxAttempts());
+    }
+
+    @Test
+    public void testResetClearsGameOver() {
+        engine.setTarget(50);
+        for (int i = 0; i < engine.getMaxAttempts(); i++) {
+            engine.makeGuess(1);
+        }
+        engine.reset();
+        assertFalse(engine.isGameOver());
+        assertEquals(0, engine.getAttempts());
+    }
 }
+
